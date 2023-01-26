@@ -24,7 +24,6 @@ cp $(MUNTJAC_ROOT)/flows/link.ld env/p/link.ld
 
 cd isa
 make -j$(nproc)
-rm *.dump
 rm rv64mi-p-breakpoint
 ```
 

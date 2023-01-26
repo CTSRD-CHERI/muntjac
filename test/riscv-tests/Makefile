@@ -16,7 +16,7 @@ endif
 
 TEST_GROUPS := rv64ui rv64um rv64ua rv64uc rv64si rv64mi rv64uf rv64ud
 
-ELFS := $(foreach group,$(TEST_GROUPS),$(wildcard $(TEST_DIR)/$(group)-*))
+ELFS := $(foreach group,$(TEST_GROUPS),$(filter-out $(wildcard $(TEST_DIR)/*.*),$(wildcard $(TEST_DIR)/$(group)-[^\.]*)))
 XMLS := $(addsuffix .xml,$(ELFS))
 
 .PHONY: all
