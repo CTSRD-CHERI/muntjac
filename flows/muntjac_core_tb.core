@@ -50,6 +50,10 @@ parameters:
     datatype: bool
     paramtype: vlogdefine
 
+  RVFIDII:
+    datatype: bool
+    paramtype: vlogdefine
+
   SYNTHESIS:
     datatype: bool
     paramtype: vlogdefine
@@ -105,6 +109,8 @@ targets:
       - assertions_on ? (files_assertions)
     parameters:
       - TRACE_ENABLE=true
+      - RVFI=true
+      - RVFIDII=true
     default_tool: verilator
     toplevel: core_wrapper
     tools:

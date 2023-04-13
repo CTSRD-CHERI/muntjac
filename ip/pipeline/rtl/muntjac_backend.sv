@@ -130,6 +130,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       de_rs2_select <= 'x;
 `ifdef TRACE_ENABLE
       de_ex_trace <= 'x;
+      de_ex_trace.valid <= 1;
 `endif
     end
     else begin
@@ -975,6 +976,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       ex2_squashed_q <= 1'b0;
 `ifdef TRACE_ENABLE
       ex2_trace_q <= 'x;
+      ex2_trace_q.valid <= 1;
 `endif
     end
     else begin
@@ -1217,6 +1219,8 @@ module muntjac_backend import muntjac_pkg::*; #(
     end else if (exception_issue) begin
       // Any other exception.
       dbg_o <= de_ex_trace;
+    end else begin
+      dbg_o.valid <= 0;
     end
 `else
     dbg_o.pc <= 64'(signed'(ex2_pc_q));

@@ -45,6 +45,10 @@ parameters:
     datatype: bool
     paramtype: vlogdefine
 
+  RVFIDII:
+    datatype: bool
+    paramtype: vlogdefine
+
   SYNTHESIS:
     datatype: bool
     paramtype: vlogdefine
@@ -99,6 +103,8 @@ targets:
       - files_verilator_harness
     parameters:
       - TRACE_ENABLE=true
+      - RVFI=true
+      - RVFIDII=true
     default_tool: verilator
     toplevel: pipeline_wrapper
     tools:

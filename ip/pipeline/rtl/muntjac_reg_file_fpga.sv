@@ -22,13 +22,21 @@ module muntjac_reg_file # (
 
   bit [DataWidth-1:0] registers [1:31];
 
+
   // Read ports
   assign rdata_a_o = raddr_a_i == 0 ? 0 : registers[raddr_a_i];
   assign rdata_b_o = raddr_b_i == 0 ? 0 : registers[raddr_b_i];
 
   // Write port
-  always_ff @(posedge clk_i) begin
-    if (we_a_i)
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+`ifdef RVFIDII
+      integer i;
+      for (i = 0; i < 32; i = i + 1) begin
+        registers[i] <= 0;
+      end
+`endif
+    end else if (we_a_i)
       registers[waddr_a_i] <= wdata_a_i;
   end
 

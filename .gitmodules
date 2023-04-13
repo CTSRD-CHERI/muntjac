@@ -1,0 +1,3 @@
+[submodule "ip/pipeline/RVFI-DII-utils"]
+	path = ip/pipeline/RVFI-DII-utils
+	url = https://github.com/CTSRD-CHERI/RVFI-DII-utils.git

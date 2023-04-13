@@ -533,6 +533,7 @@ typedef struct packed {
   csr_num_e    csr;
   logic [63:0] csr_data;
 `endif
+  logic        valid;
 } instr_trace_t;
 
 typedef struct packed {

@@ -39,7 +39,25 @@ module muntjac_pipeline import muntjac_pkg::*; #(
   logic            fetch_valid;
   logic            fetch_ready;
   fetched_instr_t  fetch_instr;
+  instr_trace_t    report;
+  logic            rvfi_rst_n;
 
+  assign dbg_o = report;
+
+`ifdef RVFIDII
+  muntjac_rvfi_dii harness (
+      .clk_i,
+      .rst_ni,
+      // TODO redirect
+      .fetch_valid_o (fetch_valid),
+      .fetch_ready_i (fetch_ready),
+      .fetch_instr_o (fetch_instr),
+
+      .rst_no (rvfi_rst_n),
+
+      .trace_i (report)
+  );
+`else
   muntjac_frontend #(
     .PhysAddrLen (PhysAddrLen)
   ) frontend (
@@ -58,6 +76,7 @@ module muntjac_pipeline import muntjac_pkg::*; #(
       .fetch_ready_i     (fetch_ready),
       .fetch_instr_o     (fetch_instr)
   );
+`endif
 
   muntjac_backend #(
     .PhysAddrLen    (PhysAddrLen),
@@ -65,7 +84,7 @@ module muntjac_pipeline import muntjac_pkg::*; #(
     .MHPMCounterNum (MHPMCounterNum)
   ) backend (
       .clk_i,
-      .rst_ni,
+      .rst_ni(rst_ni && rvfi_rst_n),
       .dcache_h2d_o,
       .dcache_d2h_i,
       .satp_o            (satp),
@@ -84,7 +103,7 @@ module muntjac_pipeline import muntjac_pkg::*; #(
       .irq_external_s_i,
       .hart_id_i,
       .hpm_event_i,
-      .dbg_o
+      .dbg_o (report)
   );
 
 endmodule

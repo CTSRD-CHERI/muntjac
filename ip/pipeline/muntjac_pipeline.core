@@ -6,6 +6,14 @@ name: "lowrisc:muntjac:pipeline:0.1"
 description: "Muntjac, a small RV64IMAC pipeline (no caches)"
 
 filesets:
+  files_c:
+    files:
+      - RVFI-DII-utils/SocketPacketUtils/socket_packet_utils.h:
+          is_include_file: true
+      - RVFI-DII-utils/SocketPacketUtils/socket_packet_utils.c
+      - RVFI-DII-utils/rvfi_dii_utils.c
+    file_type: cSource
+
   files_rtl:
     depend:
       - lowrisc:prim_generic:ram_simple_2p
@@ -24,6 +32,7 @@ filesets:
       - rtl/muntjac_instr_align.sv
       - rtl/muntjac_instr_buffer.sv
       - rtl/muntjac_frontend.sv
+      - rtl/muntjac_rvfi_dii.sv
       - rtl/muntjac_reg_file_fpga.sv
       - rtl/muntjac_fp_reg_file_fpga.sv
       - rtl/muntjac_mul.sv
@@ -44,6 +53,10 @@ parameters:
     datatype: bool
     paramtype: vlogdefine
 
+  RVFIDII:
+    datatype: bool
+    paramtype: vlogdefine
+
   SYNTHESIS:
     datatype: bool
     paramtype: vlogdefine
@@ -61,6 +74,7 @@ targets:
       - tool_verilator ? (files_lint_verilator)
       - tool_veriblelint ? (files_lint_verible)
       - files_rtl
+      - files_c
     toplevel: muntjac_pipeline
     parameters:
       - tool_vivado ? (FPGA_XILINX=true)
@@ -69,6 +83,7 @@ targets:
     parameters:
       - SYNTHESIS=true
       - RVFI=true
+      - RVFIDII=true
     default_tool: verilator
     tools:
       verilator:
@@ -84,6 +99,7 @@ targets:
     parameters:
       - SYNTHESIS=true
       - RVFI=true
+      - RVFIDII=true
     default_tool: veribleformat
     toplevel: muntjac_pipeline
     tools:
