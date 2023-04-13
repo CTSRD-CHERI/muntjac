@@ -335,13 +335,16 @@ public:
   }
 
   virtual void parse_args(int argc, char** argv) {
+    /*
     if (argc == 0) {
       this->args.print_help();
       exit(0);
     }
+    */
 
     Simulation<DUT>::parse_args(argc, argv);
 
+    /*
     // If we found an unknown argument and it doesn't look like a flag, assume
     // it's the binary to execute.
     if (this->args.get_args_parsed() < argc) {
@@ -353,6 +356,7 @@ public:
       else
         binary_position = pos;
     }
+    */
 
     if (this->args.found_arg("--memory-latency"))
       main_memory_latency = std::stoi(this->args.get_arg("--memory-latency"));
@@ -362,7 +366,9 @@ public:
       csv_on = true;
     }
 
+    /*
     read_binary(argc - binary_position, argv + binary_position);
+    */
   }
 
 private:
