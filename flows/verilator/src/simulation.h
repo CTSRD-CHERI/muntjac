@@ -403,11 +403,11 @@ private:
 
   void set_entry_point(MemoryAddress pc) {
     // auipc a0, 0; ld a0, 16(a0)
-    memory.write64(0x00, 0x0105350300000517);
+    // memory.write64(0x00, 0x0105350300000517);
     // jr a0
-    memory.write64(0x08, 0x0000000000008502);
+    // memory.write64(0x08, 0x0000000000008502);
     // target pc
-    memory.write64(0x10, pc);
+    // memory.write64(0x10, pc);
   }
 
 protected:
