@@ -390,6 +390,7 @@ typedef struct packed {
   // Exception happened during instruction fetch.
   logic ex_valid;
   exception_t exception;
+  logic [3:0] seq_id;
 } fetched_instr_t;
 
 typedef enum logic [2:0] {
@@ -520,6 +521,9 @@ typedef struct packed {
   // Instruction word.
   logic [31:0] instr_word;
 
+  logic [7:0] mem_write_mask;
+  logic [63:0] mem_addr;
+  logic [63:0] mem_write_data;
   // Privilege level.
   priv_lvl_e   mode;
 
@@ -534,6 +538,9 @@ typedef struct packed {
   logic [63:0] csr_data;
 `endif
   logic        valid;
+
+  logic[63:0] pc_wd;
+  logic       trap;
 } instr_trace_t;
 
 typedef struct packed {
@@ -605,6 +612,8 @@ typedef struct packed {
   // Exception happened during decoding.
   logic ex_valid;
   exception_t exception;
+  logic [3:0] seq_id;
+
 } decoded_instr_t;
 
 /////////////////////

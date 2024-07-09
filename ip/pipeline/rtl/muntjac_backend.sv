@@ -30,6 +30,8 @@ module muntjac_backend import muntjac_pkg::*; #(
     output                fetch_ready_o,
     input fetched_instr_t fetch_instr_i,
 
+    output logic [3:0]           redirect_seq_o,
+
     // Interrupts
     input  logic irq_software_m_i,
     input  logic irq_timer_m_i,
@@ -153,6 +155,7 @@ module muntjac_backend import muntjac_pkg::*; #(
 
 `ifdef TRACE_ENABLE
         de_ex_trace.pc <= de_decoded.pc;
+        
         de_ex_trace.instr_word <= fetch_instr_i.instr_word;
         de_ex_trace.mode <= prv_o;
 `endif
@@ -629,11 +632,13 @@ module muntjac_backend import muntjac_pkg::*; #(
   logic [63:0] ex1_alu_data_q;
   muntjac_fpu_pkg::exception_flags_t ex1_alu_fflags_q;
   logic [LogicSextAddrLen-1:0] ex1_pc_q;
+  logic [3:0] ex1_seq_q;
 
   func_unit_e ex2_select_q;
   logic [63:0] ex2_alu_data_q;
   muntjac_fpu_pkg::exception_flags_t ex2_alu_fflags_q;
   logic [LogicSextAddrLen-1:0] ex2_pc_q;
+  logic [3:0] ex2_seq_q;
   logic ex2_squashed_q;
 
 `ifdef TRACE_ENABLE
@@ -680,12 +685,15 @@ module muntjac_backend import muntjac_pkg::*; #(
   logic [63:0] ex1_alu_data_d;
   muntjac_fpu_pkg::exception_flags_t ex1_alu_fflags_d;
   logic [LogicSextAddrLen-1:0] ex1_pc_d;
+  logic [3:0] ex1_seq_d;
+
   logic ex1_use_frd_d;
   logic [4:0] ex1_rd_d;
   logic [63:0] ex_expected_pc_d;
   branch_type_e ex_branch_type_d;
   logic ex1_compressed_q, ex1_compressed_d;
   logic make_fs_dirty;
+  
 
   always_comb begin
     ex1_pending_d = ex1_pending_q;
@@ -693,6 +701,7 @@ module muntjac_backend import muntjac_pkg::*; #(
     ex1_alu_data_d = ex1_alu_data_q;
     ex1_alu_fflags_d = ex1_alu_fflags_q;
     ex1_pc_d = ex1_pc_q;
+    ex1_seq_d = ex1_seq_q;
     ex1_use_frd_d = ex1_use_frd_q;
     ex1_rd_d = ex1_rd_q;
     ex_expected_pc_d = ex_expected_pc_q;
@@ -727,6 +736,7 @@ module muntjac_backend import muntjac_pkg::*; #(
         ex1_pending_d = 1'b1;
         ex1_select_d = FU_ALU;
         ex1_pc_d = de_ex_decoded.pc[LogicSextAddrLen-1:0];
+        ex1_seq_d = de_ex_decoded.seq_id;
         ex1_use_frd_d = de_ex_decoded.use_frd;
         ex1_rd_d = de_ex_decoded.rd;
         ex1_alu_data_d = 'x;
@@ -776,6 +786,8 @@ module muntjac_backend import muntjac_pkg::*; #(
         ex1_pending_d = 1'b1;
         ex1_select_d = FU_ALU;
         ex1_pc_d = de_ex_decoded.pc[LogicSextAddrLen-1:0];
+        ex1_seq_d = de_ex_decoded.seq_id;
+
         ex1_use_frd_d = 1'b0;
         ex1_rd_d = de_ex_decoded.rd;
         ex1_alu_data_d = 'x;
@@ -822,6 +834,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       ex1_alu_data_q <= 'x;
       ex1_alu_fflags_q <= '0;
       ex1_pc_q <= 'x;
+      ex1_seq_q <= 'x;
       ex_expected_pc_q <= '0;
       ex_branch_type_q <= BRANCH_NONE;
       ex1_compressed_q <= 1'b0;
@@ -835,6 +848,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       ex1_alu_data_q <= ex1_alu_data_d;
       ex1_alu_fflags_q <= ex1_alu_fflags_d;
       ex1_pc_q <= ex1_pc_d;
+      ex1_seq_q <= ex1_seq_d;
       ex1_use_frd_q <= ex1_use_frd_d;
       ex1_rd_q <= ex1_rd_d;
       ex_expected_pc_q <= ex_expected_pc_d;
@@ -842,6 +856,29 @@ module muntjac_backend import muntjac_pkg::*; #(
       ex1_compressed_q <= ex1_compressed_d;
 `ifdef TRACE_ENABLE
       ex1_trace_q <= ex1_trace_d;
+      if(ex_branch_type_d!=BRANCH_NONE || ex_branch_type_d!=BRANCH_UNTAKEN) begin 
+        ex1_trace_q.pc_wd <= ex_expected_pc_d;
+      end else begin 
+        ex1_trace_q.pc_wd <= ex1_pc_d+4;
+      end
+      ex1_trace_q.mem_addr <= dcache_h2d_o.req_address;
+      if(de_ex_decoded.size ==1)  begin 
+        ex1_trace_q.mem_write_mask <= 8'b00000011;
+        ex1_trace_q.mem_write_data <= dcache_h2d_o.req_value [16-1 :0]; 
+      end 
+      else if(de_ex_decoded.size ==2 ) begin 
+        ex1_trace_q.mem_write_data <= dcache_h2d_o.req_value [32-1 :0]; 
+        ex1_trace_q.mem_write_mask <= 8'b00001111;
+      end
+      else if(de_ex_decoded.size ==3 ) begin
+         ex1_trace_q.mem_write_data <= dcache_h2d_o.req_value;
+         ex1_trace_q.mem_write_mask <= 8'b11111111;
+      end 
+      else begin 
+        ex1_trace_q.mem_write_data <= 64'b0;
+        ex1_trace_q.mem_write_mask <= 8'b0;
+      end
+      
 `endif
     end
   end
@@ -889,6 +926,7 @@ module muntjac_backend import muntjac_pkg::*; #(
   logic [63:0] ex2_alu_data_d;
   muntjac_fpu_pkg::exception_flags_t ex2_alu_fflags_d;
   logic [LogicSextAddrLen-1:0] ex2_pc_d;
+  logic [3:0] ex2_seq_d;
   logic ex2_use_frd_d;
   logic [4:0] ex2_rd_d;
   logic ex2_squashed_d;
@@ -902,10 +940,12 @@ module muntjac_backend import muntjac_pkg::*; #(
     ex2_alu_data_d = ex2_alu_data_q;
     ex2_alu_fflags_d = ex2_alu_fflags_q;
     ex2_pc_d = ex2_pc_q;
+    
     ex2_use_frd_d = ex2_use_frd_q;
     ex2_rd_d = ex2_rd_q;
     ex2_squashed_d = ex2_squashed_q;
 `ifdef TRACE_ENABLE
+    ex2_seq_d = ex2_seq_q;
     ex2_trace_d = ex2_trace_q;
 `endif
 
@@ -945,6 +985,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       ex2_pending_d = 1'b1;
       ex2_select_d = ex1_select_q;
       ex2_pc_d = ex1_pc_q;
+      ex2_seq_d = ex1_seq_q;
       ex2_use_frd_d = ex1_use_frd_q;
       ex2_rd_d = ex1_rd_q;
       ex2_alu_data_d = 'x;
@@ -971,6 +1012,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       ex2_alu_data_q <= 'x;
       ex2_alu_fflags_q <= '0;
       ex2_pc_q <= 'x;
+      ex2_seq_q <= 'x;
       ex2_use_frd_q <= 1'b0;
       ex2_rd_q <= '0;
       ex2_squashed_q <= 1'b0;
@@ -985,6 +1027,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       ex2_alu_data_q <= ex2_alu_data_d;
       ex2_alu_fflags_q <= ex2_alu_fflags_d;
       ex2_pc_q <= ex2_pc_d;
+      ex2_seq_q <= ex2_seq_d;
       ex2_use_frd_q <= ex2_use_frd_d;
       ex2_rd_q <= ex2_rd_d;
       ex2_squashed_q <= ex2_squashed_d;
@@ -1169,11 +1212,16 @@ module muntjac_backend import muntjac_pkg::*; #(
     branch_info_o.branch_type = ex_branch_type_q;
     branch_info_o.pc = 64'(signed'(ex1_pc_q));
     branch_info_o.compressed = ex1_compressed_q;
+    //redirect_seq_o = fetch_ready_o ? de_ex_decoded.seq_id : ex1_seq_q;
+
+    
 
     if (ex_state_q == ST_INT) begin
       redirect_pc_o = exc_tvec_q;
       redirect_valid_o = 1'b1;
       redirect_reason_o = IF_PROT_CHANGED;
+      redirect_seq_o = ex2_seq_q+1;
+
     end
     else if (sys_pc_redirect_valid) begin
       redirect_pc_o = sys_pc_redirect_target;
@@ -1184,6 +1232,8 @@ module muntjac_backend import muntjac_pkg::*; #(
       redirect_pc_o = ex_expected_pc_q;
       redirect_valid_o = 1'b1;
       redirect_reason_o = IF_MISPREDICT;
+      redirect_seq_o = de_ex_decoded.seq_id;
+
     end
   end
 
@@ -1196,7 +1246,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       end
     end
   end
-
+  logic mem_trap_valid_q;
   always_ff @(posedge clk_i) begin
     if (mem_trap_valid || exception_issue) begin
       $display("%t: trap %x", $time, mem_trap_valid ? 64'(signed'(ex2_pc_q)) : de_ex_decoded.pc);
@@ -1204,18 +1254,30 @@ module muntjac_backend import muntjac_pkg::*; #(
   end
 
   // Debug connections
+  logic [64-1:0] ex_expected_pc_qq; 
+  logic [64-1:0] ex2_pc_qq; 
+
+  logic problem_instr;
   always_ff @(posedge clk_i) begin
+    ex_expected_pc_qq <= ex_expected_pc_q;
+    ex2_pc_qq     <= ex2_pc_q ;
+    mem_trap_valid_q <= mem_trap_valid;
 `ifdef TRACE_ENABLE
     if (ex2_pending_q && ex2_data_valid && !ex2_squashed_q) begin
       // Successful instruction commit.
       dbg_o <= ex2_trace_q;
-
+      if(ex2_trace_q.instr_word == 32'h00311823) problem_instr <= 1'b1;
+      //dbg_o.pc_wd <= ex_expected_pc_qq;
+ 
       dbg_o.gpr_written <= 1;
       dbg_o.gpr <= ex2_rd_q;
-      dbg_o.gpr_data <= ex2_data;
-    end else if (mem_trap_valid) begin
+      if(ex2_rd_q != 0) dbg_o.gpr_data <= ex2_data;
+      else dbg_o.gpr_data <= 0;
+    end else if (mem_trap_valid && ! mem_trap_valid_q ) begin
       // Memory trap.
       dbg_o <= ex2_trace_q;
+      dbg_o.trap <= 1'b1;
+      dbg_o.pc_wd <= 64'b0;
     end else if (exception_issue) begin
       // Any other exception.
       dbg_o <= de_ex_trace;

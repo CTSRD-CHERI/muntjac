@@ -42,6 +42,8 @@ module muntjac_pipeline import muntjac_pkg::*; #(
   instr_trace_t    report;
   logic            rvfi_rst_n;
 
+  logic [3:0]      seq_id;
+
   assign dbg_o = report;
 
 `ifdef RVFIDII
@@ -52,7 +54,10 @@ module muntjac_pipeline import muntjac_pkg::*; #(
       .fetch_valid_o (fetch_valid),
       .fetch_ready_i (fetch_ready),
       .fetch_instr_o (fetch_instr),
-
+      .redirect_reason_i(redirect_reason),
+      .redirect_valid_i(redirect_valid),
+      .fetch_seq_id_i(seq_id),
+      .redirect_pc_i(redirect_pc),
       .rst_no (rvfi_rst_n),
 
       .trace_i (report)
@@ -93,6 +98,7 @@ module muntjac_pipeline import muntjac_pkg::*; #(
       .redirect_valid_o  (redirect_valid),
       .redirect_reason_o (redirect_reason),
       .redirect_pc_o     (redirect_pc),
+      .redirect_seq_o(seq_id),
       .branch_info_o     (branch_info),
       .fetch_valid_i     (fetch_valid),
       .fetch_ready_o     (fetch_ready),

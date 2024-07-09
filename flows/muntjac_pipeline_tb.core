@@ -119,5 +119,5 @@ targets:
           # coverage-toggle is also available, but is very slow for little gain
           - "-O3"  # Verilator optimisation
           - "-CFLAGS -O3"  # compiler optimisation
-          - "-CFLAGS -DFST_ENABLE" # Either VCD_ENABLE or FST_ENABLE
-          - "--trace-fst"          # Only if FST_ENABLE above
+          - "-CFLAGS -DVCD_ENABLE" # Either VCD_ENABLE or FST_ENABLE
+         #- "--trace-fst"          # Only if FST_ENABLE above

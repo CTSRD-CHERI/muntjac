@@ -42,7 +42,14 @@ protected:
     MemoryOperation operation = (MemoryOperation)dut.dcache_req_op;
     uint64_t operand = dut.dcache_req_value;
 
+
+
     try {
+      if(address <0x80000000|| address> 0x80800000) {
+        
+        throw AccessFault(address,"illegal address");
+
+      }
       if (!aligned(address, dut.dcache_req_size))
         throw AlignmentFault(address);
 

@@ -69,6 +69,7 @@ module muntjac_decoder import muntjac_pkg::*; import muntjac_fpu_pkg::*; #(
   logic ebreak;
 
   always_comb begin
+    
     decoded_instr_o = decoded_instr_t'('x);
     decoded_instr_o.op_type = OP_ALU;
 
@@ -93,6 +94,7 @@ module muntjac_decoder import muntjac_pkg::*; import muntjac_fpu_pkg::*; #(
     ebreak = 1'b0;
 
     // Forward these fields.
+    decoded_instr_o.seq_id = fetched_instr_i.seq_id;
     decoded_instr_o.pc = fetched_instr_i.pc;
     decoded_instr_o.if_reason = fetched_instr_i.if_reason;
 
